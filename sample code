@@ -1,0 +1,116 @@
+<!DOCTYPE html> 
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration Form
+    </title>
+  </head>
+  
+  %%[
+if RequestParameter("submitted") == "submitted" then
+var  @EmailAddress,@Country,@SubscriberKey
+set @EmailAddress = RequestParameter('EmailAddress');
+set @Country = RequestParameter('Country');
+set @SubscriberKey = RequestParameter('EmailAddress');
+]%%
+  <script runat="server">
+    Platform.Load("Core", "1");
+    var access_Token;
+    var data = {
+      EmailAddress: Variable.GetValue("@EmailAddress"),
+      Country: Variable.GetValue("@Country")
+    }
+    var SubscriberKey =Variable.GetValue("@SubscriberKey");
+    var setup = {
+      authBaseURI: "https://{url from installed package}.auth.marketingcloudapis.com/",
+      restBaseURI: "https://{url from installed package}.rest.marketingcloudapis.com/",
+      clientId: "rk6dxf250t16caunaehainuav2y0",
+      clientSecret: "RDQ2gJ72Z470CFailfneaoievLfc62V",
+      eventDefinitionKey: "APIEvent-ff8755ab-b742-0321-52fc-49e7ba726162"
+    }
+    try {
+      var tokenReceived = getToken(setup);
+      var success = false;
+      if (tokenReceived)
+        success = triggerEvent(token, setup, data);
+      if (success)
+  </script>
+  <h2> Thanks for submitting your Details will recieve an email with game link
+  </h2>
+  <script runat ="server">
+    else 
+  </script>
+  <h2> Sorry for the Inconvience Please Try again
+  </h2>
+  <script runat ="server">
+    }
+    catch (err) {
+      Write("Error: " + Stringify(err));
+    }
+    function getToken(setup) {
+      var config = {
+        url : setup.authBaseURI + "v2/token",
+        contentType : "application/json",
+        payload : {
+          "client_id": setup.clientId,
+          "client_secret": setup.clientSecret,
+          "account_id" : "514013751",
+          "grant_type": "client_credentials"
+        }
+      }
+      var req = HTTP.Post(config.url, config.contentType, Stringify(config.payload));
+      if (req.StatusCode == 200) {
+        var res = Platform.Function.ParseJSON(req.Response[0]);
+        access_Token = res.access_token;
+        return true;
+      }
+      else {
+        return false;
+      }
+    }
+    function triggerEvent(token, setup, data) {
+      var config = {
+        url : setup.restBaseURI + "interaction/v1/events",
+        contentType : "application/json",
+        headerName : ["Authorization"],
+        headerValue : ["Bearer " + token],
+        payload : {
+          ContactKey: SubscriberKey,
+          EventDefinitionKey: setup.eventDefinitionKey,
+          Data: data
+        }
+      }
+      var req = HTTP.Post(config.url, config.contentType, Stringify(config.payload), config.headerName, config.headerValue);
+      if (req.StatusCode == 201) {
+        var res = Platform.Function.ParseJSON(req["Response"][0]);
+        if (res.eventInstanceId != null && res.eventInstanceId != "") return true;
+      }
+      else {
+        return false;
+      }
+    }
+  </script>
+  %%[
+else
+]%%
+  <h2>Welcome to Registration Page 
+  </h2>
+  <body>
+    <div>
+      <form method = "post">
+        <label for="EmailAddress">Email Address:</label>
+        <input type="email" name="EmailAddress" id="EmailAddress" required>
+        <br>
+        <br>
+        <label for="Country">Country:</label>
+        <input type="text" name="Country" id="Country" required>
+        <br>
+        <br>
+        <input type="hidden" name = "submitted" id = "submitted" value = "submitted">
+        <input type="submit" value = "Sign UP">
+      </form>
+    </div>
+  </body>
+</html>
+%%[endif]%%
